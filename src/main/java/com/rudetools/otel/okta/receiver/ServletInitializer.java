@@ -1,4 +1,4 @@
-package com.rudetools.otel.examples.okta.otlpreceiver;
+package com.rudetools.otel.okta.receiver;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;

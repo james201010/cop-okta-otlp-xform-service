@@ -1,0 +1,23 @@
+!!com.rudetools.otel.okta.otlpreceiver.config.ServiceConfig
+
+copSolutionName: "oktadev"
+
+oagClusters:
+  - clusterName: "OKTA-AG-HA-DEV-TEST"
+    oagNodes:
+      - nodeHostName: "okta-oag-linux-admin-1-new.dev.aws.glic.com.test"
+        nodeIpAddress: "10.212.0.131"
+        isMasterNode: true
+        
+      - nodeHostName: "okta-oag-linux-ext-workernode-1-new.dev.aws.glic.com.test"
+        nodeIpAddress: "10.212.5.101"
+        isMasterNode: false
+ 
+      - nodeHostName: "okta-oag-linux-int-workernode-1-new.dev.aws.glic.com.test"
+        nodeIpAddress: "10.212.8.231"
+        isMasterNode: false
+
+      - nodeHostName: "okta-oag-linux-int-workernode-2-new.dev.aws.glic.com.test"
+        nodeIpAddress: "10.212.132.221"
+        isMasterNode: false
+            

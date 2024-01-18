@@ -1,8 +1,9 @@
 /**
  * 
  */
-package com.rudetools.otel.examples.okta.otlpreceiver.controllers;
+package com.rudetools.otel.okta.receiver.controllers;
 
+import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -16,9 +17,11 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import com.rudetools.otel.okta.receiver.ApplicationCtx;
+import com.rudetools.otel.okta.receiver.model.oag.OagCluster;
+
 import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
 import io.opentelemetry.proto.common.v1.KeyValue;
-import io.opentelemetry.proto.common.v1.KeyValueList;
 import io.opentelemetry.proto.metrics.v1.Gauge;
 import io.opentelemetry.proto.metrics.v1.Metric;
 import io.opentelemetry.proto.metrics.v1.Metric.DataCase;
@@ -38,7 +41,8 @@ import io.opentelemetry.proto.resource.v1.Resource;
 @Controller
 public class WebController {
 
-	public static final Logger logger = LoggerFactory.getLogger(WebController.class);
+	public static final Logger lgr = LoggerFactory.getLogger(WebController.class);
+	private static long NUM_REQS = 1;
 	
 	/**
 	 * 
@@ -53,23 +57,42 @@ public class WebController {
 	
 		try {
 			
+			long startTime = Calendar.getInstance().getTimeInMillis();
+			long reqctr = Long.parseLong("" + NUM_REQS);
+			
+			
+			log("", true);
+			log("", true);
+			
+			log("################### REQUEST " + reqctr + " BEGIN ###################", true);
+			log("", true);
+			
 			int clength = Integer.parseInt(req.getHeader("content-length"));
 			
 			Enumeration<String> str = req.getHeaderNames();
 			while (str.hasMoreElements()) {
 				String hName = (String) str.nextElement();
-				logger.info(hName + " = " + req.getHeader(hName));
+				log(hName + " = " + req.getHeader(hName), true);
 			}
 			
 			GZIPInputStream gzipis = new GZIPInputStream(req.getInputStream(), clength);
 
-			logger.info("");
-			logger.info("!!!!!!!!!!!!!!!!!!!!!!!! BEGIN payload !!!!!!!!!!!!!!!!!!!!!!!!");
-			logger.info("");
+			log("", true);
+			log("################ PAYLOAD " + reqctr + " BEGIN ################", true);
+			log("", true);
+
 			
 			ExportMetricsServiceRequest emsReq = ExportMetricsServiceRequest.parseFrom(gzipis);
 			
 			List<ResourceMetrics> rms = emsReq.getResourceMetricsList();
+			
+			
+			for (OagCluster oagClust : ApplicationCtx.CLUSTER_LIST) {
+				
+				oagClust.processRequest(rms);
+			}
+			
+			
 			
 			for (ResourceMetrics rm : rms) {
 				
@@ -80,14 +103,55 @@ public class WebController {
 			}
 			
 			
-			logger.info("!!!!!!!!!!!!!!!!!!!!!!!! END payload !!!!!!!!!!!!!!!!!!!!!!!!");
-			logger.info("");
+			
+			
+			log("################ PAYLOAD " + reqctr + " END ################", true);
+			log("", true);
+			
+			
+			long endTime = Calendar.getInstance().getTimeInMillis();
+			long totalTimeSecs = (endTime - startTime) / 1000;
+			long totalTimeMins = totalTimeSecs / 60;			
+			long minsInSecs = totalTimeMins * 60;
+			long remainingSecs = totalTimeSecs - minsInSecs;
+			
+			
+			log("", true);
+			log(" - Request Total Elapsed Time = " + totalTimeMins + " minutes : " + remainingSecs + " seconds", true);
+			log("", true);			
+			log("", true);
+			
+			log("################### REQUEST " + reqctr + " END ###################", true);
+			log("", true);
+			log("", true);
+			
+			
+			
+			NUM_REQS++;
+			
+			
 			
 			return "success";
 			
 		} catch (Throwable ex) {
+			
 			ex.printStackTrace();
+			log("################### REQUEST END ###################", true);
+			log("", true);
+			log("", true);
+
+			NUM_REQS++;
+			
 			return "error";
+		}
+		
+	}
+	
+	private static void log(String msg, boolean isInfo) {
+		if (isInfo) {
+			lgr.info(msg);
+		} else {
+			lgr.info(msg);
 		}
 		
 	}
@@ -98,10 +162,16 @@ public class WebController {
 			
 			for (ScopeMetrics sms : scopeMetrics) {
 				
-				logger.info("Scope Name = " + sms.getScope().getName());
-				logger.info("Scope Version = " + sms.getScope().getVersion());
-				logger.info("");
+				if (sms.getScope() != null) {
+
+					log("Scope Name = " + sms.getScope().getName(), false);
+					log("Scope Version = " + sms.getScope().getVersion(), false);
+
+				}
+				
+				log("", true);
 				handleAttributes(sms.getScope().getAttributesList());
+				log("", true);
 				
 				List<Metric> metrics = sms.getMetricsList();
 				
@@ -109,18 +179,18 @@ public class WebController {
 					
 					int cntr = 1;
 					for (Metric met : metrics) {
-						logger.info("Metric # " + cntr + ": -------------->");
+						log("Metric # " + cntr + ": -------------->", false);
 						String metricType = getMetricType(met);
 						handleMetric(met, metricType);
 						cntr++;
 						
-						logger.info("");
+						log("", false);
 						
 					}
 
 				}
 				
-				logger.info("");
+				log("", false);
 				
 			}
 			
@@ -136,26 +206,33 @@ public class WebController {
 			
 			if (kv.getValue().hasIntValue()) {
 				
-				logger.info("    -> " + kv.getKey() + ": " + kv.getValue().getIntValue());
+				log("    -> " + kv.getKey() + ": Int(" + kv.getValue().getIntValue() + ")", false);
+				
 			} else if (kv.getValue().hasBoolValue()) {
 				
-				logger.info("    -> " + kv.getKey() + ": " + kv.getValue().getBoolValue());
+				log("    -> " + kv.getKey() + ": Bool(" + kv.getValue().getBoolValue() + ")", false);
+				
 			} else if (kv.getValue().hasDoubleValue()) {
 				
-				logger.info("    -> " + kv.getKey() + ": " + kv.getValue().getDoubleValue());
+				log("    -> " + kv.getKey() + ": Double(" + kv.getValue().getDoubleValue() + ")", false);
+				
 			} else if (kv.getValue().hasKvlistValue()) {
 				
-				logger.info("          -> " + kv.getKey() + ": KvListValue");
+				log("          -> " + kv.getKey() + ": KvListValue Begin", false);
 				List<KeyValue> kvAttrList = kv.getValue().getKvlistValue().getValuesList();
 				
 				handleAttributes(kvAttrList);
+				log("", true);
 				
-				//logger.info("    -> " + kv.getKey() + ": " + kv.getValue().getStringValue());
+				log("          -> " + kv.getKey() + ": KvListValue End", false);
 
 			} else {
-				logger.info("    -> " + kv.getKey() + ": " + kv.getValue().getStringValue());
+				
+				log("    -> " + kv.getKey() + ": Str(" + kv.getValue().getStringValue() + ")", false);;
 				
 			}
+			
+			
 														
 		}		
 		
@@ -164,12 +241,12 @@ public class WebController {
 	
 	private static void handleResource(Resource resource) {
 		
-		logger.info("Metric Resource Attributes: -------------------------->");
+		log("Metric Resource Attributes: -------------------------->", false);
 		if (resource != null && resource.getAttributesList() != null && resource.getAttributesList().size() > 0) {
 			
 			handleAttributes(resource.getAttributesList());
 			
-			logger.info("");
+			log("", false);
 		}
 		
 	}
@@ -177,8 +254,10 @@ public class WebController {
 	
 	private static void handleMetric(Metric metric, String metricType) {
 		
-		logger.info("Metric Name = " + metric.getName());
-		logger.info("Metric Description = " + metric.getDescription()); 
+		log("Metric Name = " + metric.getName(), false);
+		log("Metric Description = " + metric.getDescription(), false); 
+		//log("Metric Unit = " + metric.getUnit());
+		
 		
 
 		if (metricType.equals("GAUGE")) {
@@ -188,7 +267,7 @@ public class WebController {
 		}
 		
 		
-		logger.info("");
+		log("", false);
 		
 	}
 	
@@ -200,31 +279,39 @@ public class WebController {
 		dataPs = sum.getDataPointsList();
 		if (dataPs != null) {
 			metricType = "sum";
-			logger.info("Metric Type = SUM");										
+			log("Metric Type = SUM", false);
+			log("", false);
 		} else {
-			logger.info("Metric Sum = NULL");
+			log("Metric Sum = NULL", false);
+			log("", false);
 		}				
 		
 		if (dataPs != null) {
 			for (NumberDataPoint ndp : dataPs) {
 				
 				if (ndp.hasAsDouble()) {
-					logger.info("Metric Double Value = " + ndp.getAsDouble());
+					log("Metric Double Value = " + ndp.getAsDouble(), false);
 				}
 				
 				if (ndp.hasAsInt()) {
-					logger.info("Metric Int Value = " + ndp.getAsInt());
+					log("Metric Int Value = " + ndp.getAsInt(), false);
+					
 				}
 				
-				logger.info("Metric Attributes: -------------->");
+				log("Metric Start Time = " + ndp.getStartTimeUnixNano(), false);
+				
+				log("Metric End Time = " + ndp.getTimeUnixNano(), false);
+				
+				
+				log("Metric Attributes: -------------->", false);
 				handleAttributes(ndp.getAttributesList());
 				
-				logger.info("");
+				log("", false);
 				
 			}
 			
 		} else {
-			logger.info("Metric DataPoint List = NULL");
+			log("Metric DataPoint List = NULL", false);
 		}
 	
 		
@@ -237,33 +324,34 @@ public class WebController {
 		dataPs = gauge.getDataPointsList();
 		if (dataPs != null) {
 			metricType = "gauge";
-			logger.info("Metric Type = GAUGE");		
-			
+			log("Metric Type = GAUGE", false);		
+			log("", false);
 			
 		} else {
-			logger.info("Metric Gauge = NULL");
+			log("Metric Gauge = NULL", false);
+			log("", false);
 		}
 		
 		if (dataPs != null) {
 			for (NumberDataPoint ndp : dataPs) {
 				
 				if (ndp.hasAsDouble()) {
-					logger.info("Metric Double Value = " + ndp.getAsDouble());
+					log("Metric Double Value = " + ndp.getAsDouble(), false);
 				}
 				
 				if (ndp.hasAsInt()) {
-					logger.info("Metric Int Value = " + ndp.getAsInt());
+					log("Metric Int Value = " + ndp.getAsInt(), false);
 				}
 				
-				logger.info("Metric Attributes: -------------->");
+				log("Metric Attributes: -------------->", false);
 				
 				handleAttributes(ndp.getAttributesList());
-				
+				log("", false);
 				
 			}
 			
 		} else {
-			logger.info("Metric DataPoint List = NULL");
+			log("Metric DataPoint List = NULL", false);
 		}
 		
 		
