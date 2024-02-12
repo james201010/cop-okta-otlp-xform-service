@@ -15,6 +15,7 @@
 	<name>okta-otlp-receiver</name>
 	
 	<description>OTEL Receiver for Okta</description>
+	
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
