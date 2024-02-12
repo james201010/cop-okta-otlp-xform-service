@@ -16,6 +16,7 @@ import com.rudetools.otel.okta.receiver.ApplicationConstants;
 import com.rudetools.otel.okta.receiver.ApplicationCtx;
 import com.rudetools.otel.okta.receiver.config.OagClusterConfig;
 import com.rudetools.otel.okta.receiver.config.OagNodeConfig;
+import com.rudetools.otel.okta.receiver.config.ServiceConfig;
 import com.rudetools.otel.okta.receiver.model.otlp.EntityInstance;
 import com.rudetools.otel.okta.receiver.model.otlp.MetricDefinition;
 import com.rudetools.otel.okta.receiver.model.otlp.OtlpEntityThread;
@@ -37,6 +38,7 @@ public class OagCluster extends OagEntity implements ApplicationConstants {
 	public static final String ENTITY_TYPE_NAME = "oag_cluster";
 	
 	private final OagClusterConfig config;
+	
 	private List<OagNode> nodes = new ArrayList<OagNode>();
 	
 	private EntityInstance entityInst = null;
@@ -49,12 +51,11 @@ public class OagCluster extends OagEntity implements ApplicationConstants {
 	 */
 	public OagCluster(OagClusterConfig clusterConfig) throws Throwable {
 		super();
-		
 		this.config = clusterConfig;
 		
-		lgr.info("");
-		lgr.info(" -- Creating OAG Cluster: " + this.config.getClusterName());
-		lgr.info("");
+		log("", true);
+		log(" -- Creating OAG Cluster: " + this.config.getClusterName(), false);
+		log("", true);
 		
 		List<OagNodeConfig> nodesConf = config.getOagNodes();
 		
@@ -71,8 +72,8 @@ public class OagCluster extends OagEntity implements ApplicationConstants {
 		
 		if (hasMatchingNode(this, resMetrics)) {
 			
-			lgr.info(" ---------- Found matching node for cluster : " + this.getClusterName());
-			lgr.info("");
+			log(" ---------- Found matching node for cluster : " + this.getClusterName(), true);
+			log("", true);
 			
 
 			
@@ -140,15 +141,22 @@ public class OagCluster extends OagEntity implements ApplicationConstants {
 
 			
 		} else {
-			lgr.info(" ---------- No matching node found for cluster : " + this.getClusterName());
-			lgr.info("");
+			log(" ---------- No matching node found for cluster : " + this.getClusterName(), true);
+			log("", true);
 		}
 		
 		
 		
 	}
 	
-	
+	private static void log(String msg, boolean isInfo) {
+		if (isInfo) {
+			//lgr.info(msg);
+		} else {
+			//lgr.info(msg);
+		}
+		
+	}		
 	
 	public String getClusterName() {
 		return config.getClusterName();

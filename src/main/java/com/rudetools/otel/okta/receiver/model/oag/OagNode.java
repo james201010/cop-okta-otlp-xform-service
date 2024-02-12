@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.rudetools.otel.okta.receiver.ApplicationConstants;
 import com.rudetools.otel.okta.receiver.ApplicationCtx;
 import com.rudetools.otel.okta.receiver.config.OagNodeConfig;
+import com.rudetools.otel.okta.receiver.config.ServiceConfig;
 import com.rudetools.otel.okta.receiver.model.otlp.EntityInstance;
 import com.rudetools.otel.okta.receiver.model.otlp.MetricDefinition;
 import com.rudetools.otel.okta.receiver.model.otlp.OtlpEntityThread;
@@ -61,7 +62,6 @@ public class OagNode extends OagEntity implements ApplicationConstants {
 	public OagNode(OagNodeConfig nodeConfig, OagCluster cluster) {
 		
 		super();
-		
 		this.config = nodeConfig;
 		this.cluster = cluster;
 		
@@ -78,8 +78,8 @@ public class OagNode extends OagEntity implements ApplicationConstants {
 		ResourceMetrics rm = findMatchingResourceMetricsForNode(this, resMetrics);
 		
 		if (rm != null) {
-			lgr.info(" *--------* Found matching node for cluster : " + this.getClusterName());
-			lgr.info("");
+			//log(" *--------* Found matching node for cluster : " + this.getClusterName(), false);
+			//log("", true);
 		
 			
 			// 
@@ -154,8 +154,8 @@ public class OagNode extends OagEntity implements ApplicationConstants {
 			
 			
 		} else {
-			lgr.info(" *--------* No matching node found for cluster : " + this.getClusterName());
-			lgr.info("");
+			//lgr.info(" *--------* No matching node found for cluster : " + this.getClusterName());
+			//lgr.info("");
 		}
 		
 	}
@@ -743,7 +743,7 @@ public class OagNode extends OagEntity implements ApplicationConstants {
 		if (isInfo) {
 			lgr.info(msg);
 		} else {
-			lgr.info(msg);
+			lgr.debug(msg);
 		}
 		
 	}	
@@ -767,10 +767,22 @@ public class OagNode extends OagEntity implements ApplicationConstants {
 							String hostName = kv.getValue().getStringValue();
 												
 							if (oagNode.getIpAddress().equals(hostName)) {
-								
-								lgr.info(" *--------* Found matching node from payload : " + hostName + " : for cluster : " + oagNode.getClusterName());
-								lgr.info("");
+								log("", true);
+								log(" *--------* Found matching node from payload where: ", true);
+								log("        ---> Cluster Name        = " + oagNode.getClusterName(), true);
+								log("        ---> Hostname for Node   = " + oagNode.getHostName(), true);
+								log("        ---> IP for Node         = " + oagNode.getIpAddress(), true);
+								log("        ---> IP from Payload     = " + hostName, true);
+								log("", true);
 								return rm;
+							} else {
+								log("", true);
+								log(" *--------* No matching node found from payload where: ", true);
+								log("        ---> Cluster Name        = " + oagNode.getClusterName(), true);
+								log("        ---> Hostname for Node   = " + oagNode.getHostName(), true);
+								log("        ---> IP for Node         = " + oagNode.getIpAddress(), true);
+								log("        ---> IP from Payload     = " + hostName, true);
+								log("", true);
 							}
 						
 							

@@ -11,6 +11,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.rudetools.otel.okta.receiver.ApplicationCtx;
 import com.rudetools.otel.okta.receiver.utils.AnyVal;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -42,7 +43,7 @@ public class EntityInstance {
 	private Resource resource = null;
 	private OpenTelemetry otelsdk = null;
 	private Meter meter = null;
-	
+
 	
 	/**
 	 * Each instance will have its own OpenTelemetry instance, set with the entity instance resource attributes
@@ -125,14 +126,18 @@ public class EntityInstance {
 	private static OpenTelemetry generateOtelSdk(final Resource res) {
 		
 	    SdkMeterProvider sdkMeterProvider = SdkMeterProvider.builder().setResource(res)
-	            .registerMetricReader(PeriodicMetricReader.builder(OtlpHttpMetricExporter.builder().build()).build())
+	            .registerMetricReader(PeriodicMetricReader.builder(OtlpHttpMetricExporter.builder()
+	            		.setEndpoint(ApplicationCtx.SRVC_CONF.getOtelCollectorHttpProtoMetricsEndpoint())
+	            		.build()).build())
 	            //.setResource(resource)
 	            .build();
 	    
 
 	    SdkLoggerProvider sdkLoggerProvider = SdkLoggerProvider.builder().setResource(res)
 	            .addLogRecordProcessor(
-	                    BatchLogRecordProcessor.builder(OtlpHttpLogRecordExporter.builder().build()).build())
+	                    BatchLogRecordProcessor.builder(OtlpHttpLogRecordExporter.builder()
+	                    		.setEndpoint(ApplicationCtx.SRVC_CONF.getOtelCollectorHttpProtoLogsEndpoint())
+	                    		.build()).build())
 	            //.setResource(resource)
 	            .build();
 
@@ -152,11 +157,14 @@ public class EntityInstance {
 
 	private static void log(String msg, boolean isInfo) {
 		if (isInfo) {
-			lgr.info(msg);
-		} else {
 			//lgr.info(msg);
+		} else {
+			//lgr.debug(msg);
 		}
 		
 	}
+
+
+	
 	
 }

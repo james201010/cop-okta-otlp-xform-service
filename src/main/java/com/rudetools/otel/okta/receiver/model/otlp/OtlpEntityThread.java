@@ -35,7 +35,7 @@ public class OtlpEntityThread implements Runnable {
 			while (true) {
 				
 				Thread.currentThread().sleep(30000);
-				lgr.info(this.threadName + " | Okta Otel Entity Thread | Sleeping for 30 seconds");
+				//lgr.info(this.threadName + " | Okta Otel Entity Thread | Sleeping for 30 seconds");
 					
 		
 			}			

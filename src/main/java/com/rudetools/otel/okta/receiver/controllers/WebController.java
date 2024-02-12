@@ -151,7 +151,7 @@ public class WebController {
 		if (isInfo) {
 			lgr.info(msg);
 		} else {
-			lgr.info(msg);
+			lgr.debug(msg);
 		}
 		
 	}

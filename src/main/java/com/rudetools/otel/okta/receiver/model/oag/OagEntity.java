@@ -356,9 +356,9 @@ public abstract class OagEntity implements ApplicationConstants {
 	
 	private static void log(String msg, boolean isInfo) {
 		if (isInfo) {
-			lgr.info(msg);
+			//lgr.info(msg);
 		} else {
-			lgr.info(msg);
+			//lgr.info(msg);
 		}
 		
 	}
